@@ -1,6 +1,7 @@
 4.18 
 
-## 实现了简单的通信服务器
+第一步:
+## 实现简单的通信服务器
 
 下面是通信函数
 
@@ -47,3 +48,6 @@ int listen(int sockfd, int backlog);
 int accept(int sockfd, struct sockaddr *addr, socklen_t *addrlen);
 ```
 
+
+
+添加了epoll
