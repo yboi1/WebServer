@@ -73,7 +73,7 @@ processpoll<T>::processpoll(int listenfd, int _max_process_num):
             close(sub_processes[i].pipe[1]);
             continue;
         }
-        else{
+        else{   // 用idx来区分是否为子线程
             close(sub_processes[i].pipe[0]);
             idx = i;
             break;
@@ -124,13 +124,14 @@ void processpoll<T>::run_parent(){
 
     addfd(epollfd, listenfd);
 
-    int pre_idx = 0;
-    int has_new_cli = 1;
+    int pre_idx = 0;        // 记录上一个子进程的索引
+    int has_new_cli = 1;    // 
     int number = 0;
 
     while(1){
         number = epoll_wait(epollfd, events, MAX_EVENT_NUMBER, -1);
 
+        // 先与客户端创建连接
         for(int i = 0; i < number; ++i){
             int sockfd = events[i].data.fd;
             if(sockfd == listenfd){
@@ -161,6 +162,7 @@ void processpoll<T>::run_child(){
         number = epoll_wait(epollfd, events, MAX_EVENT_NUMBER, -1);
         for(int i = 0; i < number; ++i){
             int sockfd = events[i].data.fd;
+            // 在首次先进行创建通信套接字
             if(sockfd == pipefd && (events[i].events & EPOLLIN)){
                 struct sockaddr_in client;
                 socklen_t client_addrlength = sizeof(client);
