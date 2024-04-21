@@ -1,0 +1,1 @@
+/usr/bin/c++  -g -rdynamic CMakeFiles/Server.dir/Main/src/acceptor.o CMakeFiles/Server.dir/Main/src/channel.o CMakeFiles/Server.dir/Main/src/echo.o CMakeFiles/Server.dir/Main/src/epoller.o CMakeFiles/Server.dir/Main/src/eventloop.o CMakeFiles/Server.dir/Main/src/main.o CMakeFiles/Server.dir/Main/src/tcpconnectionptr.o CMakeFiles/Server.dir/Main/src/tcpserver.o -o Server 
