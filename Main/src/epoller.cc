@@ -16,10 +16,10 @@ Epoller::Epoller()
 
 // 初始化池
 void Epoller::Poll(Channels& channels){
-    printf("Epoller Poll start\n");
+    // printf("Epoller Poll start\n");
     int eventnums = EpollWait();
     FillActiveChannels(eventnums, channels);
-    printf("Epoller Poll end\n");
+    // printf("Epoller Poll end\n");
 }
 
 // 将任务放到队列中

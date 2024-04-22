@@ -8,6 +8,8 @@
 #include "tcpserver.h"
 #include "tcpconnectionptr.h"
 
+static const int thread_nums = 8;
+
 namespace tiny_muduo {
 
   class Address;

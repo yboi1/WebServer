@@ -130,6 +130,21 @@ Server/fast:
 .PHONY : Server/fast
 
 # target to build an object file
+Main/src/EventLoopThreadPool.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Server.dir/build.make CMakeFiles/Server.dir/Main/src/EventLoopThreadPool.o
+.PHONY : Main/src/EventLoopThreadPool.o
+
+# target to preprocess a source file
+Main/src/EventLoopThreadPool.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Server.dir/build.make CMakeFiles/Server.dir/Main/src/EventLoopThreadPool.i
+.PHONY : Main/src/EventLoopThreadPool.i
+
+# target to generate assembly for a file
+Main/src/EventLoopThreadPool.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Server.dir/build.make CMakeFiles/Server.dir/Main/src/EventLoopThreadPool.s
+.PHONY : Main/src/EventLoopThreadPool.s
+
+# target to build an object file
 Main/src/acceptor.o:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Server.dir/build.make CMakeFiles/Server.dir/Main/src/acceptor.o
 .PHONY : Main/src/acceptor.o
@@ -205,6 +220,21 @@ Main/src/eventloop.s:
 .PHONY : Main/src/eventloop.s
 
 # target to build an object file
+Main/src/eventloopthread.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Server.dir/build.make CMakeFiles/Server.dir/Main/src/eventloopthread.o
+.PHONY : Main/src/eventloopthread.o
+
+# target to preprocess a source file
+Main/src/eventloopthread.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Server.dir/build.make CMakeFiles/Server.dir/Main/src/eventloopthread.i
+.PHONY : Main/src/eventloopthread.i
+
+# target to generate assembly for a file
+Main/src/eventloopthread.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Server.dir/build.make CMakeFiles/Server.dir/Main/src/eventloopthread.s
+.PHONY : Main/src/eventloopthread.s
+
+# target to build an object file
 Main/src/main.o:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Server.dir/build.make CMakeFiles/Server.dir/Main/src/main.o
 .PHONY : Main/src/main.o
@@ -249,6 +279,21 @@ Main/src/tcpserver.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Server.dir/build.make CMakeFiles/Server.dir/Main/src/tcpserver.s
 .PHONY : Main/src/tcpserver.s
 
+# target to build an object file
+Main/src/thread.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Server.dir/build.make CMakeFiles/Server.dir/Main/src/thread.o
+.PHONY : Main/src/thread.o
+
+# target to preprocess a source file
+Main/src/thread.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Server.dir/build.make CMakeFiles/Server.dir/Main/src/thread.i
+.PHONY : Main/src/thread.i
+
+# target to generate assembly for a file
+Main/src/thread.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Server.dir/build.make CMakeFiles/Server.dir/Main/src/thread.s
+.PHONY : Main/src/thread.s
+
 # Help Target
 help:
 	@echo "The following are some of the valid targets for this Makefile:"
@@ -258,6 +303,9 @@ help:
 	@echo "... edit_cache"
 	@echo "... rebuild_cache"
 	@echo "... Server"
+	@echo "... Main/src/EventLoopThreadPool.o"
+	@echo "... Main/src/EventLoopThreadPool.i"
+	@echo "... Main/src/EventLoopThreadPool.s"
 	@echo "... Main/src/acceptor.o"
 	@echo "... Main/src/acceptor.i"
 	@echo "... Main/src/acceptor.s"
@@ -273,6 +321,9 @@ help:
 	@echo "... Main/src/eventloop.o"
 	@echo "... Main/src/eventloop.i"
 	@echo "... Main/src/eventloop.s"
+	@echo "... Main/src/eventloopthread.o"
+	@echo "... Main/src/eventloopthread.i"
+	@echo "... Main/src/eventloopthread.s"
 	@echo "... Main/src/main.o"
 	@echo "... Main/src/main.i"
 	@echo "... Main/src/main.s"
@@ -282,6 +333,9 @@ help:
 	@echo "... Main/src/tcpserver.o"
 	@echo "... Main/src/tcpserver.i"
 	@echo "... Main/src/tcpserver.s"
+	@echo "... Main/src/thread.o"
+	@echo "... Main/src/thread.i"
+	@echo "... Main/src/thread.s"
 .PHONY : help
 
 
