@@ -5,7 +5,7 @@
             "includePath": [
                 "${workspaceFolder}/**",
                 "/usr/include",
-                "/home/boyi/WebServer/Main/include"
+                "/home/boyi/WebServer/Main/include/*"
             ],
             "defines": [],
             "compilerPath": "/usr/bin/gcc",
