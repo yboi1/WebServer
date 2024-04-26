@@ -1,7 +1,7 @@
 #include "tcpserver.h"
 
 #include "acceptor.h"
-#include "tcpconnectionptr.h"
+#include "tcpconnection.h"
 
 using namespace tiny_muduo;
 
@@ -21,9 +21,9 @@ void TcpServer::NewConnection(int connfd){
     EventLoop* loop = threads_->NextLoop();
     printf("TcpServer NewConnection Arrive Tid:%ld Manage\n", loop->DebugShowTid());
 
-    TcpConnectionPtr* ptr = new TcpConnectionPtr(loop_, connfd);
+    TcpConnection* ptr = new TcpConnection(loop_, connfd);
     ptr->SetConnectionCallback(connection_callback_);
     ptr->SetMessageCallback(message_callback_);
-    loop_->RunOneFunc(std::bind(&TcpConnectionPtr::ConnectionEstablished, ptr));
+    loop_->RunOneFunc(std::bind(&TcpConnection::ConnectionEstablished, ptr));
 
 }

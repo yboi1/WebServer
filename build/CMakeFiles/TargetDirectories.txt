@@ -1,3 +1,0 @@
-/home/boyi/WebServer/build/CMakeFiles/Server.dir
-/home/boyi/WebServer/build/CMakeFiles/edit_cache.dir
-/home/boyi/WebServer/build/CMakeFiles/rebuild_cache.dir
