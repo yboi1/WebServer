@@ -1,34 +1,57 @@
-#include "httpresponse.h"
+#ifndef TINY_MUDUO_HTTPRESPONSE_H_
+#define TINY_MUDUO_HTTPRESPONSE_H_
 
 #include <string>
+#include <utility>
 
-#include "buffer.h"
+#include "httprequest.h"
 
-using namespace tiny_muduo;
 using std::string;
 
-const string HttpResponse::server_name_ = "Tiny_muduo";
-const string HttpResponse::server_http_version_ = "HTTP/1.1";
+namespace tiny_muduo {
 
-void HttpResponse::AppendToBuffer(Buffer* buffer) {
-  string message;
+static const string CRLF = "\r\n";
 
-  message += (server_http_version_ + " " + 
-              std::to_string(status_code_) + " " + 
-              status_message_ + CRLF);
-  
-  if (close_connection_) {
-    message += ("Connection: close" + CRLF);
-  } else {
-    message += ("Content-Length: ");
-    message += (std::__cxx11::to_string(body_.size()) + CRLF);
-    message += ("Connection: Keep-Alive" + CRLF);
-    message += ("Content-Type:" + type_ + CRLF);
-    message += ("Server: " + server_name_ + CRLF);
+enum HttpStatusCode {
+  k100Continue = 100,
+  k200OK = 200,
+  k400BadRequest = 400,
+  k403Forbidden = 403,
+  k404NotFound = 404,
+  k500InternalServerErrno = 500
+};
+
+class Buffer;
+
+class HttpResponse {
+ public:
+  HttpResponse(bool close_connection) : type_("text/plain"),
+                                        close_connection_(close_connection) {
   }
-  message += CRLF;
-  message += body_;
+  ~HttpResponse() {}
 
-  buffer->Append(message);
-  return;
+  void SetStatusCode(HttpStatusCode status_code) { status_code_ = status_code; }
+  void SetStatusMessage(const string& status_message) { status_message_ = std::move(status_message); }
+  void SetCloseConnection(bool close_connection) { close_connection_ = close_connection; }
+
+  void SetBodyType(const string& type) { type_ = type; }
+  void SetBodyType(const char* type) { type_ = type; }
+  void SetBody(const string& body) { body_ = body; }
+  void SetBody(const char* body) { body_ = std::move(string(body)); }
+  void AppendToBuffer(Buffer* buffer);
+
+  bool CloseConnection() { return close_connection_; }
+
+ private:
+  static const string server_name_;
+  HttpStatusCode status_code_;
+  string status_message_;
+  string headers_;
+  string body_;
+  string type_;
+  bool close_connection_;
+};
+
 }
+
+#endif

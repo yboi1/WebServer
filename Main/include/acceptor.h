@@ -1,6 +1,7 @@
 #ifndef TINY_MUDUO_ACCEPTOR_H_
 #define TINY_MUDUO_ACCEPTOR_H_
 
+#include <memory>
 #include <functional>
 
 namespace tiny_muduo {
@@ -14,18 +15,21 @@ class Acceptor {
   typedef std::function<void (int)> NewConnectionCallback;
   
   Acceptor(EventLoop* loop, const Address& address);
+  ~Acceptor();
 
+  void SetNonBlocking(int fd); // for accept non-blocking not for accept4
   void BindListenFd(const Address& address); 
   void Listen();
   void NewConnection();
+
   void SetNewConnectionCallback(const NewConnectionCallback& callback) {
-    new_connection_callback_ = callback;
+    new_connection_callback_ = std::move(callback);
   }
 
  private:
    EventLoop* loop_;
    int listenfd_;
-   Channel* channel_;
+   std::unique_ptr<Channel> channel_;
 
    NewConnectionCallback new_connection_callback_; 
 };

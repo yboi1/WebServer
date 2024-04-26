@@ -8,9 +8,10 @@
 
 #include <vector>
 #include <functional>
+#include <memory>
 
-#include "epoller.h"
 #include "mutex.h"
+#include "epoller.h"
 
 namespace tiny_muduo {
 
@@ -20,29 +21,29 @@ class Channel;
 class EventLoop {
  public:
   typedef std::vector<Channel*> Channels;
-  typedef std::function<void()> BasicFunc;      
-  typedef std::vector<BasicFunc> ToDoList;    
+  typedef std::function<void()> BasicFunc; 
+  typedef std::vector<BasicFunc> ToDoList;  
   
   EventLoop();
   ~EventLoop();
 
-  bool IsInThreadLoop(){return ::pthread_self() == tid_; }
+  bool IsInThreadLoop() { return ::pthread_self() == tid_; }
   void Update(Channel* channel) { epoller_->Update(channel); }
-
+  void Remove(Channel* channel) { epoller_->Remove(channel); }
 
   void Loop();
   void HandleRead();
-  void RunOneFunc(const BasicFunc& func);
+  void QueueOneFunc(BasicFunc func);
+  void RunOneFunc(BasicFunc func);
   void DoToDoList();
 
-  pthread_t DebugShowTid(){return tid_;}
-
  private:
-  pthread_t tid_;
-  Epoller* epoller_;
+  pthread_t tid_; 
+  std::unique_ptr<Epoller> epoller_;
   int wakeup_fd_;
+  std::unique_ptr<Channel> wakeup_channel_;
+  bool calling_functors_;
   Channels active_channels_;
-  Channel *wakeup_channel_;
   ToDoList to_do_list_;
 
   MutexLock mutex_;
@@ -50,4 +51,3 @@ class EventLoop {
  
 }  // namespace tiny_muduo
 #endif
-

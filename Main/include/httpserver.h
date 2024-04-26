@@ -6,6 +6,7 @@
 #include <functional>
 #include <utility>
 
+#include "callback.h"
 #include "tcpserver.h"
 #include "tcpconnection.h"
 #include "buffer.h"
@@ -17,7 +18,7 @@ using tiny_muduo::HttpStatusCode;
 
 namespace tiny_muduo {
 
-static const int kThreadNums = 8;
+static const int kThreadNums = 6;
 
 class EventLoop;
 
@@ -38,16 +39,15 @@ class HttpServer{
     response.SetCloseConnection(true);
   }
 
-  void ConnectionCallback(TcpConnection* connection) {
-    printf("HttpServer has New Conneciton"); 
+  void ConnectionCallback(const TcpConnectionPtr& connection) {
   }
 
-  void MessageCallback(TcpConnection* connection, Buffer* buffer);
-  void SetHttpResponseCallback(const HttpResponseCallback& response_callback) { 
+  void MessageCallback(const TcpConnectionPtr& connection, Buffer* buffer);
+  void SetHttpResponseCallback(HttpResponseCallback response_callback) { 
     response_callback_ = std::move(response_callback); 
   } 
 
-  void DealWithRequest(const HttpRequest& request, TcpConnection* connection);
+  void DealWithRequest(const HttpRequest& request, const TcpConnectionPtr& connection);
 
  private:
   EventLoop* loop_;

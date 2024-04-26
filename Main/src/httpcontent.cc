@@ -20,15 +20,8 @@ void HttpContent::ParseLine(Buffer* buffer) {
 
   for (; checked_index_ < readable_index; ++checked_index_) {
     char chr = buf[checked_index_]; 
-    if (chr == '\n') {
-      if (checked_index_ && buf[checked_index_ - 1] == '\r') {
-        checked_index_ = checked_index_ + 1;
-        line_state_ = kLineOK;
-      } else {
-        line_state_ = kLineErrno;
-      }
-      return;
-    } else if (chr == '\r') {
+    if (chr != '\r' && chr != '\n') continue;
+    if (chr == '\r') {      
       if (checked_index_ == readable_index - 1) continue;
       if (buf[checked_index_ + 1] == '\n') {
         checked_index_ = checked_index_ + 2;
@@ -38,9 +31,15 @@ void HttpContent::ParseLine(Buffer* buffer) {
       }
       return;
     } else {
-      continue;
+      if (checked_index_ && buf[checked_index_ - 1] == '\r') {
+        checked_index_ = checked_index_ + 1;
+        line_state_ = kLineOK;
+      } else {
+        line_state_ = kLineErrno;
+      }
+      return;
     }
-  }
+   }
 
   return;
 }

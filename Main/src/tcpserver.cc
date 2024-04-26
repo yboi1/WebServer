@@ -1,29 +1,55 @@
-#include "tcpserver.h"
+#include "httpserver.h"
 
-#include "acceptor.h"
-#include "tcpconnection.h"
+#include <functional>
 
 using namespace tiny_muduo;
 
-TcpServer::TcpServer(EventLoop* loop, const Address& address)
-    :   loop_(loop),
-        threads_(new EventLoopThreadPool(loop_)),
-        acceptor_(new Acceptor(loop, address)){
-    acceptor_->SetNewConnectionCallback(std::bind(&TcpServer::NewConnection, this, _1));
+using tiny_muduo::Version;
+
+HttpServer::HttpServer(EventLoop* loop, const Address& address) : loop_(loop),
+                                                                  server_(loop, address) {
+  server_.SetConnectionCallback(
+          std::bind(&HttpServer::ConnectionCallback, this, _1));
+  server_.SetMessageCallback(
+          std::bind(&HttpServer::MessageCallback, this, _1, _2));
+  server_.SetThreadNums(kThreadNums);
+  SetHttpResponseCallback(std::bind(&HttpServer::HttpDefaultCallback, this, _1, _2));
 }
 
-TcpServer::~TcpServer(){
-    delete acceptor_;
-    delete threads_;
+HttpServer::~HttpServer() {
 }
 
-void TcpServer::NewConnection(int connfd){
-    EventLoop* loop = threads_->NextLoop();
-    printf("TcpServer NewConnection Arrive Tid:%ld Manage\n", loop->DebugShowTid());
+void HttpServer::MessageCallback(const TcpConnectionPtr& connection, 
+                                 Buffer* buffer) {
+ HttpContent* content = connection->GetHttpContent();
+ if (connection->IsShutdown()) return;
 
-    TcpConnection* ptr = new TcpConnection(loop_, connfd);
-    ptr->SetConnectionCallback(connection_callback_);
-    ptr->SetMessageCallback(message_callback_);
-    loop_->RunOneFunc(std::bind(&TcpConnection::ConnectionEstablished, ptr));
+ if (!content->ParseContent(buffer)) {
+   connection->Send("HTTP/1.1 400 Bad Request\r\n\r\n");
+   connection->Shutdown();
+   return;
+ }   
 
+ if (content->GetCompleteRequest()) {
+   DealWithRequest(content->request(), connection);
+   content->ResetContentState();
+ }   
+}
+
+void HttpServer::DealWithRequest(const HttpRequest& request, 
+                                 const TcpConnectionPtr& connection) {
+  string connection_state = std::move(request.GetHeader("Connection"));
+  bool close = (connection_state == "Close" || 
+               (request.version() == kHttp10 &&
+                connection_state != "Keep-Alive"));
+
+  HttpResponse response(close); 
+  response_callback_(request, response);
+  Buffer buffer;
+  response.AppendToBuffer(&buffer);
+  connection->Send(&buffer);
+
+  if (response.CloseConnection()) {
+    connection->Shutdown();
+  }   
 }

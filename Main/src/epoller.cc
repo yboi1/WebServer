@@ -1,71 +1,90 @@
 #include "epoller.h"
 
-#include <iostream>
+#define NDEBUG
+#include <assert.h>
 #include <string.h>
 #include <sys/epoll.h>
-#include <fcntl.h>
+
+#include <vector>
 
 #include "channel.h"
 
 using namespace tiny_muduo;
 
 Epoller::Epoller()
-    :epollfd_(epoll_create(kMaxEvents)), 
-    events_(kMaxEvents){
+    : epollfd_(::epoll_create1(EPOLL_CLOEXEC)),
+      events_(kDefaultEvents), 
+      channels_() {
 }
 
-// 初始化池
-void Epoller::Poll(Channels& channels){
-    // printf("Epoller Poll start\n");
-    int eventnums = EpollWait();
-    FillActiveChannels(eventnums, channels);
-    // printf("Epoller Poll end\n");
+Epoller::~Epoller() {
+  ::close(epollfd_);
 }
 
-// 将任务放到队列中
-void Epoller::FillActiveChannels(int eventnums, Channels& channels){
-    for(int i = 0; i < eventnums; ++i){
-        Channel* ptr = static_cast<Channel*> (events_[i].data.ptr);
-        ptr->SetReceivedEvents(events_[i].events);
-        channels.emplace_back(ptr);
-    }
+void Epoller::Poll(Channels& channels) {
+  int eventnums = EpollWait();
+  FillActiveChannels(eventnums, channels);
 }
 
-int Epoller::SetNonBlocking(int fd) {
-  int old_state = fcntl(fd, F_GETFL);
-  int new_state = old_state | O_NONBLOCK;
-  fcntl(fd, F_SETFL, new_state);
-  return new_state;
+void Epoller::FillActiveChannels(int eventnums, Channels& channels) {
+  for (int i = 0; i < eventnums; ++i) {
+    Channel* ptr = static_cast<Channel*> (events_[i].data.ptr);
+    ptr->SetReceivedEvents(events_[i].events);
+    channels.emplace_back(ptr);
+  }
+  if (eventnums == static_cast<int>(events_.size())) {
+      events_.resize(eventnums * 2);
+  }
 }
 
-// 读取监听事件
-void Epoller::Update(Channel* channel){
-    int op = 0, events = channel->events();
-    ChannelState state = channel->state();
-    if(state == kNew || state == kDeleted){
-        channel->SetChannelState(kAdded);
-        if(events & EPOLLIN){
-            op = EPOLL_CTL_ADD;
-            SetNonBlocking(channel->fd());
-        }else if(events & EPOLLRDHUP){
-            op = EPOLL_CTL_DEL;
-        }else {
+void Epoller::Remove(Channel* channel) {
+  int fd = channel->fd();
+  ChannelState state = channel->state();
+  assert(state == kDeleted || state == kAdded);
 
-        }
+  if (state == kAdded) {
+    UpdateChannel(EPOLL_CTL_DEL, channel);
+  }
+  channel->SetChannelState(kNew);
+  channels_.erase(fd);
+  return;
+}
+
+void Epoller::Update(Channel* channel) {
+  int op = 0, events = channel->events();
+  ChannelState state = channel->state(); 
+  int fd = channel->fd();
+
+  if (state == kNew || state == kDeleted) {
+    if (state == kNew) {
+      assert(channels_.find(fd) == channels_.end());
+      channels_[fd] = channel;
     } else {
-        op = EPOLL_CTL_MOD;
+      assert(channels_.find(fd) != channels_.end());
+      assert(channels_[fd] == channel);
     }
-    
-    UpdateChannel(op, channel);
+    op = EPOLL_CTL_ADD;
+    channel->SetChannelState(kAdded);
+  } else {
+    assert(channels_.find(fd) != channels_.end());
+    assert(channels_[fd] == channel);
+    if (events == 0) {
+      op = EPOLL_CTL_DEL;
+      channel->SetChannelState(kDeleted); 
+    } else {
+      op = EPOLL_CTL_MOD; 
+    }
+  }
+  
+  UpdateChannel(op, channel);
 }
 
-// 配置监听事件和对象
-void Epoller::UpdateChannel(int operation, Channel* channel){
-    struct epoll_event event;
-    memset(&event, '\0', sizeof(struct epoll_event));
-    event.events = channel->events();
-    event.data.ptr = static_cast<void*>(channel);
+void Epoller::UpdateChannel(int operation, Channel* channel) {
+  struct epoll_event event;
+  memset(&event, '\0', sizeof(event));
+  event.events = channel->events();
+  event.data.ptr = static_cast<void*>(channel);
 
-    epoll_ctl(epollfd_, operation, channel->fd(), &event);
-    return;
+  epoll_ctl(epollfd_, operation, channel->fd(), &event);
+  return;
 }

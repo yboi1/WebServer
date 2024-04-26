@@ -1,123 +1,41 @@
-#include "httprequest.h"
+#include "httpresponse.h"
 
-#include <utility>
-#include <algorithm>
+#include <stdio.h>
 
-#include "httpparsestate.h"
+#include <string>
+
+#include "buffer.h"
 
 using namespace tiny_muduo;
-using tiny_muduo::Method;
-using tiny_muduo::HttpRequestParseState;
+using std::string;
 
-HttpRequest::HttpRequest(){   
-}
+const string HttpResponse::server_name_ = "Tiny_muduo";
 
-HttpRequest::~HttpRequest() {
-}
+void HttpResponse::AppendToBuffer(Buffer* buffer) {
+  char buf[32] = {0};
 
-bool HttpRequest::ParseRequestMethod(const char *start, const char *end){
-    string method(start, end);
-    bool has_method = true;
-
-    if (method == "GET") {
-    method_ = kGet;
-  } else if (method == "POST") {
-    method_ = kPost;
-  } else if (method == "PUT") {
-    method_ = kPut;
-  } else if (method == "DELETE") {
-    method_ = kDelete;
-  } else if (method == "TRACE") {
-    method_ = kTrace;
-  } else if (method == "OPTIONS") {
-    method_ = kOptions;
-  } else if (method == "CONNECT") {
-    method_ = kConnect;
-  } else if (method == "PATCH") {
-    method_ = kPatch;
-  } else {
-    has_method = false;
-  }
-
-  return has_method;
-}
-
-void HttpRequest::ParseRequestLine(const char* start, const char* end, 
-                      HttpRequestParseState& state) {
-  {      
-    const char* space = std::find(start, end, ' ');
-    if (space == end) {
-      state = kParseErrno;
-      return;
-    }
+  snprintf(buf, sizeof(buf), "HTTP/1.1 %d ",status_code_);
+  buffer->Append(buf);
+  buffer->Append(status_message_);
+  buffer->Append(CRLF);
   
-    if (!ParseRequestMethod(start, space)) {
-      state = kParseErrno;
-      return;
-    }
-    start = space + 1;
-  }
- 
-  {
-    const char* space = std::find(start, end, ' ');
-    if (space == end) {
-      state = kParseErrno;
-      return;
-    }
-
-    const char* query = std::find(start, end, '?'); 
-    if (query != end) {
-      path_ = std::move(string(start, query));
-      query_ = std::move(string(query + 1, space));
-    } else {
-      path_ = std::move(string(start, space));
-    }        
-    start = space + 1;
-  }
-   
-  {
-    const int httplen = sizeof(http) / sizeof(char) - 1;
-    const char* httpindex = std::search(start, end, http, http + httplen);
-    if (httpindex == end) {
-      state = kParseErrno;
-      return;
-    }
-
-    const char chr = *(httpindex + httplen);
-    if (httpindex + httplen + 1 == end && (chr == '1' || chr == '0')) {
-      if (chr == '1') {
-        version_ = kHttp11;
-      } else {
-        version_ = kHttp10;
-      }
-    } else {
-      state = kParseErrno;
-      return;
-    }
+  if (close_connection_) {
+    buffer->Append("Connection: close\r\n");
+  } else {
+    snprintf(buf, sizeof(buf), "Content-Length: %zd\r\n", body_.size()); // no need to memset this is longer than HTTP... one
+    buffer->Append(buf);
+    buffer->Append("Connection: Keep-Alive\r\n");
   }
 
-  state = kParseHeaders;
-}
+  buffer->Append("Content-Type: ");
+  buffer->Append(type_);
+  buffer->Append(CRLF);
 
-void HttpRequest::ParseBody(const char* start, const char* end, 
-                            HttpRequestParseState& state) {
-}
+  buffer->Append("Server: ");
+  buffer->Append(server_name_);
+  buffer->Append(CRLF);
+  buffer->Append(CRLF);
 
-void HttpRequest::ParseHeaders(const char* start, const char* end, 
-                      HttpRequestParseState& state) {
-  if (start == end && *start == '\r' && *(start + 1) == '\n') {
-    state = kParseGotCompleteRequest;
-    return;
-  }
-
-  const char* colon = std::find(start, end, ':');
-  if (colon == end) {
-    state = kParseErrno;
-    return;
-  }
-
-  const char* vaild = colon + 1;
-  while (*(vaild++) != ' ') {}
-  headers_[std::move(string(start, colon))] = std::move(string(colon + 1, vaild));
+  buffer->Append(body_);
   return;
 }

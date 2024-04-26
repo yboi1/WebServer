@@ -44,7 +44,6 @@ class HttpResponse {
 
  private:
   static const string server_name_;
-  static const string server_http_version_;
   HttpStatusCode status_code_;
   string status_message_;
   string headers_;

@@ -19,14 +19,15 @@ HttpServer::HttpServer(EventLoop* loop, const Address& address) : loop_(loop),
 HttpServer::~HttpServer() {
 }
 
-void HttpServer::MessageCallback(TcpConnection* connection, 
+void HttpServer::MessageCallback(const TcpConnectionPtr& connection, 
                                  Buffer* buffer) {
+ HttpContent* content = connection->GetHttpContent();
  if (connection->IsShutdown()) return;
 
- HttpContent* content = connection->GetHttpContent();
  if (!content->ParseContent(buffer)) {
    connection->Send("HTTP/1.1 400 Bad Request\r\n\r\n");
    connection->Shutdown();
+   return;
  }   
 
  if (content->GetCompleteRequest()) {
@@ -36,7 +37,7 @@ void HttpServer::MessageCallback(TcpConnection* connection,
 }
 
 void HttpServer::DealWithRequest(const HttpRequest& request, 
-                                 TcpConnection* connection) {
+                                 const TcpConnectionPtr& connection) {
   string connection_state = std::move(request.GetHeader("Connection"));
   bool close = (connection_state == "Close" || 
                (request.version() == kHttp10 &&
@@ -49,6 +50,6 @@ void HttpServer::DealWithRequest(const HttpRequest& request,
   connection->Send(&buffer);
 
   if (response.CloseConnection()) {
-    //connection->ShutDown();
+    connection->Shutdown();
   }   
 }
